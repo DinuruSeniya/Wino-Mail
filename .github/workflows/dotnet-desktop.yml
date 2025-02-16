@@ -13,7 +13,7 @@ jobs:
     steps:
       # Step 1: Check out the repository code.
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.2.2
 
       # Step 2: Setup the required .NET version (using .NET 9 as specified).
       - name: Setup .NET
@@ -35,7 +35,7 @@ jobs:
       # Adjust the path below if your packaging project outputs the ARM64 package
       # in a different location than "WinoMail.packaging/AppPackages".
       - name: Upload ARM64 Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: ARM64-Build
           path: WinoMail.packaging/AppPackages
