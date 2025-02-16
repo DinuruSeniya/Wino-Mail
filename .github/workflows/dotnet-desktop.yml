@@ -29,7 +29,7 @@ jobs:
       # This step rebuilds the solution in Release configuration for ARM64,
       # and sets the startup project to WinoMail.packaging.
       - name: Build ARM64 Packaging Project
-        run: msbuild WinoMail.slnx /t:Rebuild /p:Configuration=Release /p:Platform=ARM64 /p:StartupProject=WinoMail.packaging
+        run: msbuild WinoMail.slnx /t:Rebuild /p:Configuration=Release /p:Platform=ARM64 /p:StartupProject=WinoMail.packaging /p:WindowsTargetPlatformVersion=10.22621.0
 
       # Step 5: Upload the build artifact.
       # Adjust the path below if your packaging project outputs the ARM64 package
