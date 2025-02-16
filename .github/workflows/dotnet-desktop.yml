@@ -1,0 +1,41 @@
+name: Build ARM64
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # Step 1: Check out the repository code.
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Setup the required .NET version (using .NET 9 as specified).
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      # Step 3: Restore NuGet packages.
+      - name: Restore dependencies
+        run: dotnet restore WinoMail.slnx
+
+      # Step 4: Build the solution.
+      # This step rebuilds the solution in Release configuration for ARM64,
+      # and sets the startup project to WinoMail.packaging.
+      - name: Build ARM64 Packaging Project
+        run: msbuild WinoMail.slnx /t:Rebuild /p:Configuration=Release /p:Platform=ARM64 /p:StartupProject=WinoMail.packaging
+
+      # Step 5: Upload the build artifact.
+      # Adjust the path below if your packaging project outputs the ARM64 package
+      # in a different location than "WinoMail.packaging/AppPackages".
+      - name: Upload ARM64 Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ARM64-Build
+          path: WinoMail.packaging/AppPackages
