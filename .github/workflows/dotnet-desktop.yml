@@ -8,30 +8,23 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: windows-11-arm
 
     steps:
       # Step 1: Check out the repository code.
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      # Step 2: Setup .NET 9.
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      # Step 3: Setup MSBuild.
-      - name: Setup MSBuild
+      - name: Setup Visual Studio
         uses: microsoft/setup-msbuild@v2
 
-      # Step 4: Restore NuGet packages.
+      # Step 3: Restore
       - name: Restore dependencies
         run: dotnet restore WinoMail.slnx
 
-      # Step 5: Build the ARM64 Packaging Project with Windows 11 SDK 10.0.22621.0.
+      # Step 5: Build the ARM64 Packaging Project .
       - name: Build ARM64 Packaging Project
-        run: msbuild WinoMail.slnx /t:Rebuild /p:Configuration=Release /p:Platform=ARM64 /p:StartupProject=WinoMail.packaging /p:WindowsTargetPlatformVersion=10.0.22621.0
+        run: msbuild WinoMail.slnx /p:Configuration=Release /p:Platform=ARM64 /p:StartupProject=WinoMail.packaging
 
       # Step 6: Upload the build artifact (AppPackages folder).
       - name: Upload ARM64 Build Artifact
