@@ -27,7 +27,7 @@ jobs:
 
       # Step 4: Restore NuGet packages.
       - name: Restore dependencies
-        run: nuget restore WinoMail.slnx
+        run: dotnet restore WinoMail.slnx
 
       # Step 5: Build the ARM64 Packaging Project with Windows 11 SDK 10.0.22621.0.
       - name: Build ARM64 Packaging Project
