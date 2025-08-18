@@ -24,7 +24,10 @@ jobs:
 
       # Step 5: Build the ARM64 Packaging Project .
       - name: Build ARM64 Packaging Project
-        run: msbuild WinoMail.slnx /p:Configuration=Release /p:Platform=ARM64 /p:StartupProject=WinoMail.packaging /p:AppxPackageSigningEnabled=false /p:PackageCertificateThumbprint=""
+        run: msbuild WinoMail.slnx ^
+            /p:Configuration=Release ^
+            /p:Platform=ARM64 ^
+            /p:StartupProject=WinoMail.packaging
 
       # Step 6: Upload the build artifact (AppPackages folder).
       - name: Upload ARM64 Build Artifact
