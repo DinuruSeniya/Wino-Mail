@@ -32,6 +32,10 @@ jobs:
             /p:Configuration=Release 
             /p:Platform=ARM64 
             /p:StartupProject=WinoMail.packaging
+            /p:GenerateTemporaryStoreCertificate=false 
+            /p:AppxBundle=Always 
+            /p:UapAppxPackageBuildMode=StoreUpload 
+            /p:IncludeAppxSymbols=false
 
       # Step 6: Upload the build artifact (AppPackages folder).
       - name: Upload ARM64 Build Artifact
