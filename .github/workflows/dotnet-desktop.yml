@@ -1,0 +1,45 @@
+name: Build ARM64
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-11-arm
+
+    steps:
+      # Step 1: Check out the repository code.
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Visual Studio
+        uses: microsoft/setup-msbuild@v2
+
+      # Step 3: Restore
+      - name: Restore dependencies
+        run: dotnet restore WinoMail.slnx
+
+      # Step 5: Build the ARM64 Packaging Project .
+      - name: Build ARM64 Packaging Project
+        run: msbuild WinoMail.slnx 
+            /p:Configuration=Release 
+            /p:Platform=ARM64 
+            /p:StartupProject=WinoMail.packaging
+            /p:GenerateTemporaryStoreCertificate=false 
+            /p:AppxBundle=Always 
+            /p:UapAppxPackageBuildMode=StoreUpload 
+            /p:IncludeAppxSymbols=false
+
+      # Step 6: Upload the build artifact (AppPackages folder).
+      - name: Upload ARM64 Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ARM64-Build
+          path: WinoMail.packaging/AppPackages/**

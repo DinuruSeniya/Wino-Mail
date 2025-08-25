@@ -59,7 +59,7 @@
                 <Setter Property="ChildrenTransitions">
                     <Setter.Value>
                         <TransitionCollection>
-                            <EntranceThemeTransition IsStaggeringEnabled="True" />
+                            <EntranceThemeTransition IsStaggeringEnabled="False" />
                         </TransitionCollection>
                     </Setter.Value>
                 </Setter>
@@ -95,6 +95,19 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+            </Style>
+
+            <!--  Spacing between cards  -->
+            <x:Double x:Key="SettingsCardSpacing">4</x:Double>
+
+            <!--  Style (inc. the correct spacing) of a section header  -->
+            <Style
+                x:Key="SettingsSectionHeaderTextBlockStyle"
+                BasedOn="{StaticResource BodyStrongTextBlockStyle}"
+                TargetType="TextBlock">
+                <Style.Setters>
+                    <Setter Property="Margin" Value="1,30,0,6" />
+                </Style.Setters>
             </Style>
         </ResourceDictionary>
     </ResourceDictionary.MergedDictionaries>

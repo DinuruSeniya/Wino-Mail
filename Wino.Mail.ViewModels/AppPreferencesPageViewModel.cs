@@ -18,7 +18,6 @@ public partial class AppPreferencesPageViewModel : MailBaseViewModel
     [ObservableProperty]
     private List<string> _appTerminationBehavior;
 
-
     [ObservableProperty]
     public partial List<string> SearchModes { get; set; }
 
@@ -26,6 +25,18 @@ public partial class AppPreferencesPageViewModel : MailBaseViewModel
     [NotifyPropertyChangedFor(nameof(IsStartupBehaviorDisabled))]
     [NotifyPropertyChangedFor(nameof(IsStartupBehaviorEnabled))]
     private StartupBehaviorResult startupBehaviorResult;
+
+    private int _emailSyncIntervalMinutes;
+    public int EmailSyncIntervalMinutes
+    {
+        get => _emailSyncIntervalMinutes;
+        set
+        {
+            SetProperty(ref _emailSyncIntervalMinutes, value);
+
+            PreferencesService.EmailSyncIntervalMinutes = value;
+        }
+    }
 
     public bool IsStartupBehaviorDisabled => !IsStartupBehaviorEnabled;
     public bool IsStartupBehaviorEnabled => StartupBehaviorResult == StartupBehaviorResult.Enabled;
@@ -85,6 +96,7 @@ public partial class AppPreferencesPageViewModel : MailBaseViewModel
 
         SelectedAppTerminationBehavior = _appTerminationBehavior[(int)PreferencesService.ServerTerminationBehavior];
         SelectedDefaultSearchMode = SearchModes[(int)PreferencesService.DefaultSearchMode];
+        EmailSyncIntervalMinutes = PreferencesService.EmailSyncIntervalMinutes;
     }
 
     [RelayCommand]

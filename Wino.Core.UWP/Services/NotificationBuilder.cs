@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.WinUI.Notifications;
 using Serilog;
 using Windows.Data.Xml.Dom;
@@ -11,7 +13,7 @@ using Wino.Core.Domain.Entities.Mail;
 using Wino.Core.Domain.Enums;
 using Wino.Core.Domain.Interfaces;
 using Wino.Core.Domain.Models.MailItem;
-using Wino.Core.Services;
+using Wino.Messaging.UI;
 
 namespace Wino.Core.UWP.Services;
 
@@ -23,16 +25,24 @@ public class NotificationBuilder : INotificationBuilder
     private readonly IAccountService _accountService;
     private readonly IFolderService _folderService;
     private readonly IMailService _mailService;
+    private readonly IThumbnailService _thumbnailService;
 
     public NotificationBuilder(IUnderlyingThemeService underlyingThemeService,
                                IAccountService accountService,
                                IFolderService folderService,
-                               IMailService mailService)
+                               IMailService mailService,
+                               IThumbnailService thumbnailService)
     {
         _underlyingThemeService = underlyingThemeService;
         _accountService = accountService;
         _folderService = folderService;
         _mailService = mailService;
+        _thumbnailService = thumbnailService;
+
+        WeakReferenceMessenger.Default.Register<MailReadStatusChanged>(this, (r, msg) =>
+        {
+            RemoveNotification(msg.UniqueId);
+        });
     }
 
     public async Task CreateNotificationsAsync(Guid inboxFolderId, IEnumerable<IMailItem> downloadedMailItems)
@@ -78,29 +88,25 @@ public class NotificationBuilder : INotificationBuilder
                 foreach (var mailItem in validItems)
                 {
                     if (mailItem.IsRead)
+                    {
+                        // Remove the notification for a specific mail if it exists
+                        ToastNotificationManager.History.Remove(mailItem.UniqueId.ToString());
                         continue;
+                    }
 
                     var builder = new ToastContentBuilder();
                     builder.SetToastScenario(ToastScenario.Default);
 
-                    var host = ThumbnailService.GetHost(mailItem.FromAddress);
-
-                    var knownTuple = ThumbnailService.CheckIsKnown(host);
-
-                    bool isKnown = knownTuple.Item1;
-                    host = knownTuple.Item2;
-
-                    if (isKnown)
-                        builder.AddAppLogoOverride(new System.Uri(ThumbnailService.GetKnownHostImage(host)), hintCrop: ToastGenericAppLogoCrop.Default);
-                    else
+                    var avatarThumbnail = await _thumbnailService.GetThumbnailAsync(mailItem.FromAddress, awaitLoad: true);
+                    if (!string.IsNullOrEmpty(avatarThumbnail))
                     {
-                        // TODO: https://learn.microsoft.com/en-us/windows/apps/design/shell/tiles-and-notifications/adaptive-interactive-toasts?tabs=toolkit
-                        // Follow official guides for icons/theme.
-
-                        bool isOSDarkTheme = _underlyingThemeService.IsUnderlyingThemeDark();
-                        string profileLogoName = isOSDarkTheme ? "profile-dark.png" : "profile-light.png";
-
-                        builder.AddAppLogoOverride(new System.Uri($"ms-appx:///Assets/NotificationIcons/{profileLogoName}"), hintCrop: ToastGenericAppLogoCrop.Circle);
+                        var tempFile = await Windows.Storage.ApplicationData.Current.TemporaryFolder.CreateFileAsync($"{Guid.NewGuid()}.png", Windows.Storage.CreationCollisionOption.ReplaceExisting);
+                        await using (var stream = await tempFile.OpenStreamForWriteAsync())
+                        {
+                            var bytes = Convert.FromBase64String(avatarThumbnail);
+                            await stream.WriteAsync(bytes);
+                        }
+                        builder.AddAppLogoOverride(new Uri($"ms-appdata:///temp/{tempFile.Name}"), hintCrop: ToastGenericAppLogoCrop.Default);
                     }
 
                     // Override system notification timetamp with received date of the mail.
@@ -114,15 +120,16 @@ public class NotificationBuilder : INotificationBuilder
                     builder.AddArgument(Constants.ToastMailUniqueIdKey, mailItem.UniqueId.ToString());
                     builder.AddArgument(Constants.ToastActionKey, MailOperation.Navigate);
 
-                    builder.AddButton(GetMarkedAsRead(mailItem.UniqueId));
+                    builder.AddButton(GetMarkAsReadButton(mailItem.UniqueId));
                     builder.AddButton(GetDeleteButton(mailItem.UniqueId));
-                    builder.AddButton(GetDismissButton());
+                    builder.AddButton(GetArchiveButton(mailItem.UniqueId));
                     builder.AddAudio(new ToastAudio()
                     {
                         Src = new Uri("ms-winsoundevent:Notification.Mail")
                     });
 
-                    builder.Show();
+                    // Use UniqueId as tag to allow removal
+                    builder.Show(toast => toast.Tag = mailItem.UniqueId.ToString());
                 }
 
                 await UpdateTaskbarIconBadgeAsync();
@@ -139,6 +146,14 @@ public class NotificationBuilder : INotificationBuilder
         .SetDismissActivation()
         .SetImageUri(new Uri("ms-appx:///Assets/NotificationIcons/dismiss.png"));
 
+    private static ToastButton GetArchiveButton(Guid mailUniqueId)
+        => new ToastButton()
+        .SetContent(Translator.MailOperation_Archive)
+        .SetImageUri(new Uri("ms-appx:///Assets/NotificationIcons/archive.png"))
+        .AddArgument(Constants.ToastMailUniqueIdKey, mailUniqueId.ToString())
+        .AddArgument(Constants.ToastActionKey, MailOperation.Archive)
+        .SetBackgroundActivation();
+
     private ToastButton GetDeleteButton(Guid mailUniqueId)
         => new ToastButton()
         .SetContent(Translator.MailOperation_Delete)
@@ -147,7 +162,7 @@ public class NotificationBuilder : INotificationBuilder
         .AddArgument(Constants.ToastActionKey, MailOperation.SoftDelete)
         .SetBackgroundActivation();
 
-    private ToastButton GetMarkedAsRead(Guid mailUniqueId)
+    private static ToastButton GetMarkAsReadButton(Guid mailUniqueId)
         => new ToastButton()
         .SetContent(Translator.MailOperation_MarkAsRead)
         .SetImageUri(new System.Uri("ms-appx:///Assets/NotificationIcons/markread.png"))
@@ -226,5 +241,17 @@ public class NotificationBuilder : INotificationBuilder
         //builder.Show();
 
         //await Task.CompletedTask;
+    }
+
+    public void RemoveNotification(Guid mailUniqueId)
+    {
+        try
+        {
+            ToastNotificationManager.History.Remove(mailUniqueId.ToString());
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, $"Failed to remove notification for mail {mailUniqueId}");
+        }
     }
 }

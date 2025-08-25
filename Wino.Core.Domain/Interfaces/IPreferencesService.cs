@@ -1,11 +1,12 @@
 ﻿using System;
+using System.ComponentModel;
 using Wino.Core.Domain.Enums;
 using Wino.Core.Domain.Models.Calendar;
 using Wino.Core.Domain.Models.Reader;
 
 namespace Wino.Core.Domain.Interfaces;
 
-public interface IPreferencesService
+public interface IPreferencesService: INotifyPropertyChanged
 {
     /// <summary>
     /// When any of the preferences are changed.
@@ -50,6 +51,12 @@ public interface IPreferencesService
     /// Local search will still offer online search at the end of local search results.
     /// </summary>
     SearchMode DefaultSearchMode { get; set; }
+
+    /// <summary>
+    /// Setting: Interval in minutes for background email synchronization.
+    /// </summary>
+    int EmailSyncIntervalMinutes { get; set; }
+
     #endregion
 
     #region Mail
@@ -187,6 +194,21 @@ public interface IPreferencesService
     /// Setting: Whether the mail list action bar is enabled or not.
     /// </summary>
     bool IsMailListActionBarEnabled { get; set; }
+
+    /// <summary>
+    /// Setting: Whether the mail rendering page will show the action labels
+    /// </summary>
+    bool IsShowActionLabelsEnabled { get; set; }
+
+    /// <summary>
+    /// Setting: Enable/disable Gravatar for sender avatars.
+    /// </summary>
+    bool IsGravatarEnabled { get; set; }
+
+    /// <summary>
+    /// Setting: Enable/disable Favicon for sender avatars.
+    /// </summary>
+    bool IsFaviconEnabled { get; set; }
 
     #endregion
 
