@@ -36,6 +36,15 @@ jobs:
         if: matrix.language == 'csharp'
         uses: microsoft/setup-msbuild@v2
 
+      - name: Install UWP Packaging Workload
+        run: |
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify `
+            --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" `
+            --add Microsoft.VisualStudio.ComponentGroup.UWP.NetCore `
+            --add Microsoft.VisualStudio.ComponentGroup.UWP.VC `
+            --add Microsoft.VisualStudio.Component.Windows10SDK.26100 `
+            --quiet --norestart
+
       # Initialize CodeQL
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -59,7 +68,7 @@ jobs:
           msbuild WinoMail.slnx `
             /p:Configuration=Release `
             /p:Platform=x64 `
-            /p:StartupProject=WinoMail.packaging 
+            /p:AppxPackage=false
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
