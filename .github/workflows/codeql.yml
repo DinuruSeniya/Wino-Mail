@@ -51,8 +51,8 @@ jobs:
 
       - name: Install Windows workloads
         run: |
-          dotnet workload install windowsapp
-          dotnet workload install winui
+          choco install visualstudio2022-workload-uwpbuildtools --no-progress --yes
+          choco install visualstudio2022-workload-manageddesktopbuildtools --no-progress --yes
 
       # Step 1: Warm up obj folder structure
       - name: Warm up generator output dirs
