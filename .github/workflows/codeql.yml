@@ -57,11 +57,7 @@ jobs:
         name: Build solution
         shell: pwsh
         run: |
-          msbuild WinoMail.slnx `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /p:StartupProject=WinoMail.packaging `
-            /p:GenerateTemporaryStoreCertificate=false 
+          dotnet build WinoMail.slnx --configuration Release --no-incremental /p:Platform=x64 /p:AppxPackage=false
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
