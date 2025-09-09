@@ -53,10 +53,7 @@ jobs:
             /p:Configuration=Release `
             /p:Platform=x64 `
             /p:StartupProject=WinoMail.packaging `
-            /p:GenerateTemporaryStoreCertificate=false `
-            /p:AppxBundle=Always `
-            /p:UapAppxPackageBuildMode=StoreUpload `
-            /p:IncludeAppxSymbols=false
+            /p:GenerateTemporaryStoreCertificate=false 
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
