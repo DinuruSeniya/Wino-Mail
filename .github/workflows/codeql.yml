@@ -43,6 +43,15 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
+      - name: Pre-create generator output folders
+        shell: pwsh
+        run: |
+          $platform = "x64"
+          $config = "Release"
+          $tfm = "net9.0-windows10.0.26100.0"
+          $base = "Wino.Core.UWP/obj/$platform/$config/$tfm/generated"
+          New-Item -ItemType Directory -Force -Path "$base/CommunityToolkit.Mvvm.SourceGenerators/CommunityToolkit.Mvvm.SourceGenerators.IMessengerRegisterAllGenerator" | Out-Null  
+
       # Manual build for C#
       - if: matrix.build-mode == 'manual'
         name: Build solution
