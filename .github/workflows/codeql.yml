@@ -49,25 +49,39 @@ jobs:
           New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
           -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
 
-      # Manual build for C#
+      # Step 1: Warm up obj folder structure
+      - name: Warm up generator output dirs
+        shell: pwsh
+        run: |
+          # Build only up to CoreCompile to trigger source generator folder creation
+          msbuild WinoMail.slnx /t:CoreCompile /p:Configuration=Release /p:Platform=x64 /m:1 /p:AppxPackage=false
+      
+          # Save the generated folder structure to a temp file
+          $genDirs = Get-ChildItem -Recurse -Directory -Filter generated
+          $allPaths = @()
+          foreach ($gen in $genDirs) {
+            $subDirs = Get-ChildItem -Recurse -Directory -Path $gen.FullName
+            $allPaths += $gen.FullName
+            $allPaths += $subDirs.FullName
+          }
+          $allPaths | Set-Content "$env:RUNNER_TEMP/generated_paths.txt"
+
+      # Step 2: Re-create the structure before CodeQL build
+      - name: Pre-create generator output dirs
+        shell: pwsh
+        run: |
+          $paths = Get-Content "$env:RUNNER_TEMP/generated_paths.txt"
+          foreach ($p in $paths) {
+            if (-not (Test-Path $p)) {
+              New-Item -ItemType Directory -Path $p -Force | Out-Null
+            }
+          }
+
+      # Step 3: Actual build under CodeQL
       - if: matrix.build-mode == 'manual'
         name: Build solution
         shell: pwsh
         run: |
-          # Pre-create source generator output directories to avoid CS0016 errors
-          $projects = Get-ChildItem -Recurse -Directory -Filter obj
-          foreach ($proj in $projects) {
-            $genRoot = Join-Path $proj.FullName "generated"
-            $mvvmGen = Join-Path $genRoot "CommunityToolkit.Mvvm.SourceGenerators"
-            $winrtGen = Join-Path $genRoot "WinRT.SourceGenerator"
-
-            foreach ($path in @($genRoot, $mvvmGen, $winrtGen)) {
-              if (-not (Test-Path $path)) {
-                New-Item -ItemType Directory -Path $path | Out-Null
-              }
-            }
-          }
-          
           dotnet restore WinoMail.slnx
           msbuild WinoMail.slnx `
             /p:Configuration=Release `
