@@ -43,12 +43,31 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
+      - name: Enable long paths
+        shell: pwsh
+        run: |
+          New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+          -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+
       # Manual build for C#
       - if: matrix.build-mode == 'manual'
         name: Build solution
         shell: pwsh
         run: |
-          dotnet clean WinoMail.slnx
+          # Pre-create source generator output directories to avoid CS0016 errors
+          $projects = Get-ChildItem -Recurse -Directory -Filter obj
+          foreach ($proj in $projects) {
+            $genRoot = Join-Path $proj.FullName "generated"
+            $mvvmGen = Join-Path $genRoot "CommunityToolkit.Mvvm.SourceGenerators"
+            $winrtGen = Join-Path $genRoot "WinRT.SourceGenerator"
+
+            foreach ($path in @($genRoot, $mvvmGen, $winrtGen)) {
+              if (-not (Test-Path $path)) {
+                New-Item -ItemType Directory -Path $path | Out-Null
+              }
+            }
+          }
+          
           dotnet restore WinoMail.slnx
           msbuild WinoMail.slnx `
             /p:Configuration=Release `
