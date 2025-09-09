@@ -11,7 +11,7 @@ on:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ${{ 'windows-11-arm' || 'windows-latest' }}
+    runs-on: ${{ 'windows-latest' }}
     permissions:
       security-events: write
       packages: read
