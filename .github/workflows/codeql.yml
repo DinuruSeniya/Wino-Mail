@@ -51,7 +51,7 @@ jobs:
           dotnet restore WinoMail.slnx
           msbuild WinoMail.slnx `
             /p:Configuration=Release `
-            /p:Platform=ARM64 `
+            /p:Platform=AnyCPU `
             /p:StartupProject=WinoMail.packaging `
             /p:GenerateTemporaryStoreCertificate=false `
             /p:AppxBundle=Always `
